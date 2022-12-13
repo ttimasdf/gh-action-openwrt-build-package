@@ -1,14 +1,55 @@
 # OpenWrt GitHub Action SDK
 
 GitHub CI action to build packages via SDK using official OpenWrt SDK Docker
-containers. This is primary used to test build OpenWrt repositories but can
-also be used for downstream projects maintaining their own package
-repositories.
+containers.
 
 ## Example usage
 
-The following YAML code can be used to build all packages of a repository and
-store created `ipk` files as artifacts.
+### Multi-dimension build matrix for multiple architectures and OpenWrt releases
+
+The following YAML snippet builds ipk packages for two architectures
+on OpenWrt 22.03.2 and 21.02.5, then upload packages as artifects.
+
+```yaml
+name: Build Packages
+
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+
+jobs:
+  build:
+    name: Build on ${{ matrix.version }} for ${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [x86-64, arm_cortex-a15_neon-vfpv4]
+        version: [22.03.2, 21.02.5]
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Build ipk
+        uses: ttimasdf/gh-action-openwrt-build-package@master
+        env:
+          ARCH: ${{ matrix.arch }}-${{ matrix.version }}
+
+      - name: Upload ipk packages
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.arch }}-${{ matrix.version }}-package
+          # path: bin/packages/${{ matrix.arch }}/action/*.ipk
+          path: bin/packages/*/action/*.ipk
+```
+
+### Single-dimension build matrix on OpenWrt snapshot
+
+The following YAML code can be used to build packages (on OpenWrt snapshot)
+for the repository and store created `ipk` files as artifacts.
 
 ```yaml
 name: Test Build
@@ -34,15 +75,15 @@ jobs:
           fetch-depth: 0
 
       - name: Build
-        uses: openwrt/gh-action-sdk@main
+        uses: ttimasdf/gh-action-openwrt-build-package@master
         env:
           ARCH: ${{ matrix.arch }}
 
       - name: Store packages
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ matrix.arch}}-packages
-          path: bin/packages/${{ matrix.arch }}/packages/*.ipk
+          name: ${{ matrix.arch }}-packages
+          path: bin/packages/*/action/*.ipk
 ```
 
 ## Environmental variables
