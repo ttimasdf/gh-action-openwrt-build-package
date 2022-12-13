@@ -6,7 +6,8 @@ runs:
   steps:
     - run: |
         echo "artifacts_dir=${ARTIFACTS_DIR:-$GITHUB_WORKSPACE}" >> "$GITHUB_OUTPUT"
-        echo "feed_dir=${FEED_DIR:-$GITHUB_WORKSPACE}" >> "$GITHUB_OUTPUT"
+        echo "feed_dir=$(realpath ${FEED_DIR:-$GITHUB_WORKSPACE}/..)" >> "$GITHUB_OUTPUT"
+        echo "packages=${PACKAGES:-${GITHUB_REPOSITORY#*/}}" >> "$GITHUB_OUTPUT"
       shell: bash
       id: inputs
     - run: sudo chown -R 1000:1000 ${{ steps.inputs.outputs.artifacts_dir }} ${{ steps.inputs.outputs.feed_dir }}
@@ -26,7 +27,7 @@ runs:
           --env NO_DEFAULT_FEEDS \
           --env NO_REFRESH_CHECK \
           --env NO_SHFMT_CHECK \
-          --env PACKAGES \
+          --env PACKAGES=${{ steps.inputs.outputs.packages }} \
           --env INDEX \
           --env V \
           -v ${{ steps.inputs.outputs.artifacts_dir }}:/artifacts \
